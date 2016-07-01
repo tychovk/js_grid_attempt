@@ -8,12 +8,8 @@
 
     const VP = { X: 0, 
                  Y: 0, 
-                 WIDTH: 15, 
-                 HEIGHT: 15,
-                 xPix: 512,
-                 yPix: 352 };
-
-
+                 WIDTH: 512,    // keep this one divisable by 32
+                 HEIGHT: 352 };  // keep this one divisable by 32
     const FIELD_SIDE_SIZE = 32;
 
     const NUM_OF_TILES = 2;
@@ -30,67 +26,95 @@
         canvas = document.getElementById(canvasId);
         context = canvas.getContext('2d');
         let worldGrid = loadMap(1);
-        let worldSize = { x: worldGrid.length - 1,
-                          y: worldGrid[0].length - 1};
+        let worldSize = { x: worldGrid[0].length - 1,
+                          y: worldGrid.length - 1,
+                          width: (worldGrid[0].length) * FIELD_SIDE_SIZE,
+                          height: (worldGrid.length) * FIELD_SIDE_SIZE};
         
 
-        canvas.width = VP.xPix;// window.innerWidth; //512;
-        canvas.height = VP.yPix; //window.innerHeight; //352;
+        canvas.width = VP.WIDTH;// window.innerWidth; //512;
+        canvas.height = VP.HEIGHT; //window.innerHeight; //352;
+        console.log(VP.WIDTH);
+        console.log(worldSize.width);
+        if (VP.WIDTH > worldSize.width) {
+            canvas.width = worldSize.width;
+        }
+        if (VP.HEIGHT > worldSize.height) {
+            canvas.height = worldSize.height;
+        }
+
 
         let tiles = this.tileImages(NUM_OF_TILES);
         
         let player = new Player(this, VP, playerInfo, Keyboarder);
+        this.draw(context, VP, worldGrid, tiles, player);
 
         canvas.addEventListener('keydown', function(e) {
             console.log(e);
-            var key = null;
-            switch (e.which) {
-            case 37:
+        });
+
+        canvas.tabIndex = 0;
+        canvas.focus();
+        canvas.addEventListener('keydown', function(e) {
+            console.log(e);
+            var key = e.keyCode;
+            if (key == 37) {
                 // Left
-                if (player.position.x > 0) player.position.x--;
-                //break;
-            case 38:
+                if (player.position.x > 0) player.position.x -= 8;
+            }
+
+            if (key == 38) {
                 // Up
-                if (player.position.y > 0) player.position.y--;
-                //break;
-            case 39:
+                if (player.position.y > 0) player.position.y -= 8;
+            }
+
+            if (key == 39) {
                 // Right
-                if (player.position.x < worldSize.x) player.position.x++;
-                //break;
-            case 40:
+                if (player.position.x < (worldSize.width - player.size.x)) player.position.x += 8;
+            }
+
+            if (key == 40) {
                 // Down
-                if (player.position.y < worldSize.y) player.position.y++;
-                //break;
+                if (player.position.y < (worldSize.height - player.size.y)) player.position.y += 8;
             }
             // Okay! The player is done moving, now we have to determine the "best" viewport.
             // Ideally the viewport centers the player,
             // but if its too close to an edge we'll have to deal with that edge
 
-            VP.X = player.position.x - Math.floor(0.5 * vWidth);
-            if (VP.X < 0) vX = 0;
-            if (VP.X+vWidth > worldSize.x) VP.X = worldSize.x - vWidth;
-            
-            
-            VP.Y = player.position.y - Math.floor(0.5 * vHeight);
+            VP.X = player.position.x - Math.floor(0.5 * VP.WIDTH);
+            if (VP.X < 0) VP.X = 0;
+            if (VP.X+VP.WIDTH > worldSize.width) VP.X = worldSize.width - VP.WIDTH;          
+            VP.Y = player.position.y - Math.floor(0.5 * VP.HEIGHT);
             if (VP.Y < 0) VP.Y = 0;
-            if (VP.Y+vHeight > worldSize.y) VP.X = worldSize.y - vHeight;
-            
-            this.draw(context, VP, worldGrid, tiles, [Player]);
+            if (VP.Y+VP.HEIGHT > worldSize.height) VP.Y = worldSize.height - VP.HEIGHT;
+            //console.log("VP y" + VP.Y);
+            //this.draw(context, VP, worldGrid, tiles, Player);
+
+            //let y_grid = Math.floor(VP.Y / FIELD_SIDE_SIZE);
+            //let x_grid = Math.floor(VP.X / FIELD_SIDE_SIZE);
+
+            //console.log(y_grid);
+            //console.log(x_grid);
+            //console.log(player.position.y);
+            //console.log(worldSize.height);
+            //console.log(worldSize.y);
+            //console.log(player.position.x);
+            //console.log(worldSize.width);
+            //console.log(worldSize.x);
 
             }, false);
 
-        var bodies.player = player;
+        if (canvas.addEventListener) console.log("event listener is here");
+    
 
-
-
-        var tick = function(context, VP, worldGrid, NUM_OF_TILES, bodies) {
+        var tick = function(context, VP, worldGrid, NUM_OF_TILES, player) {
             let tiles = this.tileImages(NUM_OF_TILES);
             //console.log("vp" + VP);
             //console.log("worldGrid" + worldGrid);
 
-            this.draw(context, VP, worldGrid, tiles, this.bodies);
+            this.draw(context, VP, worldGrid, tiles, player);
             requestAnimationFrame(tick);
-        }.bind(this, context, VP, worldGrid, NUM_OF_TILES, this.bodies);
+        }.bind(this, context, VP, worldGrid, NUM_OF_TILES, player);
         tick();
             
     };
@@ -112,24 +136,37 @@
             this.bodies.push(body);
         },
 
-        draw: function(context, VP, worldGrid, tiles, bodies) {
+        draw: function(context, VP, worldGrid, tiles, player) {
+            context.clearRect(0, 0, VP.WIDTH, VP.HEIGHT);
+            let x_max, y_max;
 
-            context.clearRect(0, 0, VP.xPix, VP.yPix);
-            for (let y = 0; y <= VP.HEIGHT; y++) {
-                for (let x = 0; x <= VP.WIDTH; x++) {
-                    let x_pix = x * FIELD_SIDE_SIZE;
-                    let y_pix = y * FIELD_SIDE_SIZE;
-                    let tile = tiles[worldGrid[y][x]];
+            y_max = Math.floor(VP.HEIGHT / FIELD_SIDE_SIZE) - 1;
+            x_max = Math.floor(VP.WIDTH / FIELD_SIDE_SIZE) - 1;
+            if (VP.Y % FIELD_SIDE_SIZE != 0) { 
+                y_max += + 1;
+            }
+            if (VP.X % FIELD_SIDE_SIZE != 0) {
+                x_max += + 1;
+            } 
+
+            for (let y = 0; y <= y_max; y++) {
+                for (let x = 0; x <= x_max; x++) {
+                    let x_pix = x * FIELD_SIDE_SIZE - VP.X % FIELD_SIDE_SIZE;
+                    let y_pix = y * FIELD_SIDE_SIZE - VP.Y % FIELD_SIDE_SIZE;
+                    let x_grid = x + Math.floor(VP.X / FIELD_SIDE_SIZE);
+                    let y_grid = y + Math.floor(VP.Y / FIELD_SIDE_SIZE);
+                    
+                    let tile = tiles[worldGrid[y_grid][x_grid]];
 
                     context.drawImage(tile, x_pix, y_pix, FIELD_SIDE_SIZE, FIELD_SIDE_SIZE);
                 };
             };
-            if (this.bodies != null) {
-                for (let x = 0; x < this.bodies.length; x++) {
+            //if (this.player != null) {
+            //    for (let x = 0; x < this.player.length; x++) {
                     context.fillStyle = 'red';
-                    drawBody(context, this.bodies[x]);
-                };
-            };
+                    drawBody(context, VP, player);
+            //    };
+            //};
 
         },
 
@@ -137,7 +174,7 @@
 
     var Player = function(game, VP, playerInfo, keyboarder) {
         this.game = game; // saved for later use
-        this.size = { x: 15, y: 15 };
+        this.size = { x: 16, y: 16 };
         this.position = { x: VP.X, y: VP.Y };
         this.keyboarder = new Keyboarder();
     };
@@ -162,14 +199,16 @@
     };
 
 
-    var drawBody = function(context, body) {
+    var drawBody = function(context, VP, body) {
         
-        context.fillRect(body.position.x,
-                         body.position.y,
+        context.fillRect(body.position.x - VP.X,
+                         body.position.y - VP.Y,
                          body.size.x, body.size.y);
-    };
-            //context.fillRect((playerX-vX)*32, (playerY-vY)*32, 32, 32);
 
+        //context.fillRect((playerX-vX)*32, (playerY-vY)*32, 32, 32);
+
+    };
+            
 
 
 
