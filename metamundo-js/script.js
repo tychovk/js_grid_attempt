@@ -145,39 +145,37 @@
             context.clearRect(0, 0, VP.WIDTH, VP.HEIGHT);
             let x_max, y_max;
 
-            y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE) - 1;
-            x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE) - 1;
+            let height_fields = VP.HEIGHT / FIELD_SIDE_SIZE;
+            let width_fields = VP.WIDTH / FIELD_SIDE_SIZE;
 
-            if (VP.WIDTH % FIELD_SIDE_SIZE == 0) {
-                if (VP.X % FIELD_SIDE_SIZE != 0) {
-                    x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
-                }
+            y_max = Math.ceil(height_fields) - 1;
+            x_max = Math.ceil(width_fields) - 1;
 
-            } else if (VP.X % FIELD_SIDE_SIZE != 0 && VP.X + VP.WIDTH <= worldSize.width - FIELD_SIDE_SIZE) {
-                x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
-            } else if (VP.X + VP.WIDTH > worldSize.width - FIELD_SIDE_SIZE) {
-                if ((VP.WIDTH - (VP.X + VP.WIDTH - (worldSize.width - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(VP.WIDTH/ FIELD_SIDE_SIZE)) {
-                    x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
+
+            if (VP.X % FIELD_SIDE_SIZE != 0) {
+                if (VP.X + VP.WIDTH <= worldSize.width - FIELD_SIDE_SIZE || VP.WIDTH % FIELD_SIDE_SIZE == 0) {
+                    x_max = Math.ceil(width_fields);
                 }
             }
 
-
-            if (VP.HEIGHT % FIELD_SIDE_SIZE == 0) {
-                if (VP.Y % FIELD_SIDE_SIZE != 0) {
-                    y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
+            if (VP.X + VP.WIDTH > worldSize.width - FIELD_SIDE_SIZE) {
+                if ((VP.WIDTH - (VP.X + VP.WIDTH - (worldSize.width - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(width_fields)) {
+                    x_max = Math.ceil(width_fields);
                 }
-            } else if (VP.Y % FIELD_SIDE_SIZE != 0 && VP.Y + VP.HEIGHT <= worldSize.height - FIELD_SIDE_SIZE) {
-                y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
-            } 
+            }
+
+            if (VP.Y % FIELD_SIDE_SIZE != 0) {
+                if (VP.Y + VP.HEIGHT <= worldSize.height - FIELD_SIDE_SIZE || VP.HEIGHT % FIELD_SIDE_SIZE == 0) {
+                    y_max = Math.ceil(height_fields);
+                }
+            }
 
             if (VP.Y + VP.HEIGHT > worldSize.height - FIELD_SIDE_SIZE) {
                 console.log(VP.HEIGHT - (VP.Y + VP.HEIGHT - (worldSize.height - FIELD_SIDE_SIZE)));
-                if ((VP.HEIGHT - (VP.Y + VP.HEIGHT - (worldSize.height - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(VP.HEIGHT/ FIELD_SIDE_SIZE)) {
-                    y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
+                if ((VP.HEIGHT - (VP.Y + VP.HEIGHT - (worldSize.height - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(height_fields)) {
+                    y_max = Math.ceil(height_fields);
                 }
             }
-
-
 
             for (let y = 0; y <= y_max; y++) {
                 for (let x = 0; x <= x_max; x++) {
