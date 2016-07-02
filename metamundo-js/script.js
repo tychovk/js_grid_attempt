@@ -6,10 +6,11 @@
 
     // viewport
 
-    const VP = { X: 0, 
-                 Y: 0, 
-                 WIDTH: 512,    // keep this one divisable by 32
-                 HEIGHT: 352 };  // keep this one divisable by 32
+    var VP = { X: 0, 
+               Y: 0, 
+               WIDTH: 512,    // keep this one divisable by 32. Default: 512
+               HEIGHT: 109 };  // keep this one divisable by 32. Default: 352
+
     const FIELD_SIDE_SIZE = 32;
 
     const NUM_OF_TILES = 2;
@@ -38,16 +39,18 @@
         console.log(worldSize.width);
         if (VP.WIDTH > worldSize.width) {
             canvas.width = worldSize.width;
+            VP.WIDTH = worldSize.width;
         }
         if (VP.HEIGHT > worldSize.height) {
             canvas.height = worldSize.height;
+            VP.HEIGHT = worldSize.height;
         }
 
 
         let tiles = this.tileImages(NUM_OF_TILES);
         
         let player = new Player(this, VP, playerInfo, Keyboarder);
-        this.draw(context, VP, worldGrid, tiles, player);
+        this.draw(context, VP, worldGrid, worldSize, tiles, player);
 
         canvas.addEventListener('keydown', function(e) {
             console.log(e);
@@ -83,12 +86,13 @@
 
             VP.X = player.position.x - Math.floor(0.5 * VP.WIDTH);
             if (VP.X < 0) VP.X = 0;
-            if (VP.X+VP.WIDTH > worldSize.width) VP.X = worldSize.width - VP.WIDTH;          
+            if (VP.X + VP.WIDTH > worldSize.width) VP.X = worldSize.width - VP.WIDTH;          
+            
             VP.Y = player.position.y - Math.floor(0.5 * VP.HEIGHT);
             if (VP.Y < 0) VP.Y = 0;
-            if (VP.Y+VP.HEIGHT > worldSize.height) VP.Y = worldSize.height - VP.HEIGHT;
+            if (VP.Y + VP.HEIGHT > worldSize.height) VP.Y = worldSize.height - VP.HEIGHT;
             //console.log("VP y" + VP.Y);
-            //this.draw(context, VP, worldGrid, tiles, Player);
+            //Game.draw(context, VP, worldGrid, worldSize, tiles, Player);
 
             //let y_grid = Math.floor(VP.Y / FIELD_SIDE_SIZE);
             //let x_grid = Math.floor(VP.X / FIELD_SIDE_SIZE);
@@ -102,21 +106,22 @@
             //console.log(worldSize.width);
             //console.log(worldSize.x);
 
+
             }, false);
 
         if (canvas.addEventListener) console.log("event listener is here");
     
 
-        var tick = function(context, VP, worldGrid, NUM_OF_TILES, player) {
+        var tick = function(context, VP, worldGrid, worldSize, NUM_OF_TILES, player) {
             let tiles = this.tileImages(NUM_OF_TILES);
             //console.log("vp" + VP);
             //console.log("worldGrid" + worldGrid);
 
-            this.draw(context, VP, worldGrid, tiles, player);
+            this.draw(context, VP, worldGrid, worldSize, tiles, player);
             requestAnimationFrame(tick);
-        }.bind(this, context, VP, worldGrid, NUM_OF_TILES, player);
+        }.bind(this, context, VP, worldGrid, worldSize, NUM_OF_TILES, player);
         tick();
-            
+     
     };
 
 
@@ -136,18 +141,43 @@
             this.bodies.push(body);
         },
 
-        draw: function(context, VP, worldGrid, tiles, player) {
+        draw: function(context, VP, worldGrid, worldSize, tiles, player) {
             context.clearRect(0, 0, VP.WIDTH, VP.HEIGHT);
             let x_max, y_max;
 
-            y_max = Math.floor(VP.HEIGHT / FIELD_SIDE_SIZE) - 1;
-            x_max = Math.floor(VP.WIDTH / FIELD_SIDE_SIZE) - 1;
-            if (VP.Y % FIELD_SIDE_SIZE != 0) { 
-                y_max += + 1;
+            y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE) - 1;
+            x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE) - 1;
+
+            if (VP.WIDTH % FIELD_SIDE_SIZE == 0) {
+                if (VP.X % FIELD_SIDE_SIZE != 0) {
+                    x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
+                }
+
+            } else if (VP.X % FIELD_SIDE_SIZE != 0 && VP.X + VP.WIDTH <= worldSize.width - FIELD_SIDE_SIZE) {
+                x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
+            } else if (VP.X + VP.WIDTH > worldSize.width - FIELD_SIDE_SIZE) {
+                if ((VP.WIDTH - (VP.X + VP.WIDTH - (worldSize.width - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(VP.WIDTH/ FIELD_SIDE_SIZE)) {
+                    x_max = Math.ceil(VP.WIDTH / FIELD_SIDE_SIZE);
+                }
             }
-            if (VP.X % FIELD_SIDE_SIZE != 0) {
-                x_max += + 1;
+
+
+            if (VP.HEIGHT % FIELD_SIDE_SIZE == 0) {
+                if (VP.Y % FIELD_SIDE_SIZE != 0) {
+                    y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
+                }
+            } else if (VP.Y % FIELD_SIDE_SIZE != 0 && VP.Y + VP.HEIGHT <= worldSize.height - FIELD_SIDE_SIZE) {
+                y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
             } 
+
+            if (VP.Y + VP.HEIGHT > worldSize.height - FIELD_SIDE_SIZE) {
+                console.log(VP.HEIGHT - (VP.Y + VP.HEIGHT - (worldSize.height - FIELD_SIDE_SIZE)));
+                if ((VP.HEIGHT - (VP.Y + VP.HEIGHT - (worldSize.height - FIELD_SIDE_SIZE))) / FIELD_SIDE_SIZE > Math.floor(VP.HEIGHT/ FIELD_SIDE_SIZE)) {
+                    y_max = Math.ceil(VP.HEIGHT / FIELD_SIDE_SIZE);
+                }
+            }
+
+
 
             for (let y = 0; y <= y_max; y++) {
                 for (let x = 0; x <= x_max; x++) {
